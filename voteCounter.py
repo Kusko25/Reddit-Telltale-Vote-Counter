@@ -5,6 +5,8 @@ import configparser
 
 CANDIDATES=[["Fiona","Carley"],["Rhys","Louis"]]
 URL="https://www.reddit.com/r/telltale/comments/ggqwob/telltales_most_popular_character_fiona_vs_carley/"
+OPEN_PERIOD=60*60*24*2
+MIN_ACC_AGE=60*60*24*3
 
 def init():
     if os.path.exists("config.ini"):
@@ -33,8 +35,8 @@ def processReddit(choices):
     for comment in comments:
 
         if  comment.author in voters or\
-            comment.created_utc - comment.author.created_utc<60*60*24*3 or\
-            comment.created_utc> thread.created_utc +  60*60*24*2:
+            comment.created_utc - comment.author.created_utc<MIN_ACC_AGE or\
+            comment.created_utc> thread.created_utc +  OPEN_PERIOD:
             continue
 
         for i,choice in enumerate(choices):
