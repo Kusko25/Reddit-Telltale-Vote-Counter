@@ -12,7 +12,7 @@ def init():
     if os.path.exists("config.ini"):
         config = configparser.ConfigParser()
         config.read("config.ini")
-        return Reddit(user_agent="dataIsDangerous",client_id=config["LOGIN"]["id"],client_secret=config["LOGIN"]["secret"])
+        return Reddit(user_agent=config["LOGIN"]["user_agent"],client_id=config["LOGIN"]["id"],client_secret=config["LOGIN"]["secret"])
     else:
         raise FileNotFoundError("'config.ini' not found in root directory.")
 
