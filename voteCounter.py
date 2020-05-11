@@ -2,6 +2,7 @@ from praw import *
 import os
 import matplotlib.pyplot as plt
 import configparser
+import numpy as np
 
 CANDIDATES=[["Fiona","Carley"],["Rhys","Louis"]]
 URL="https://www.reddit.com/r/telltale/comments/ggqwob/telltales_most_popular_character_fiona_vs_carley/"
@@ -32,6 +33,8 @@ def processReddit(choices):
 
     comments.sort(key=lambda x: x.created_utc,reverse=True)
 
+    csvData=[]
+
     for comment in comments:
 
         if  comment.author in voters or\
@@ -39,6 +42,8 @@ def processReddit(choices):
             comment.created_utc> thread.created_utc +  OPEN_PERIOD:
             continue
 
+        voteString = [str(comment.author)] + [""]*len(choices)
+        voted = False
         for i,choice in enumerate(choices):
             a = choice[0].lower() in comment.body.lower()
             b = choice[1].lower() in comment.body.lower()
@@ -46,10 +51,18 @@ def processReddit(choices):
                 if a and b:
                     continue
                 if a:
+                    voteString[i+1]=choice[0]
                     results[i][0][1]+=1
                 if b:
+                    voteString[i+1]=choice[1]
                     results[i][1][1]+=1
+                voted=True
                 voters.add(comment.author)
+        if voted:
+            csvData.append(";".join(voteString))
+
+    with open("data.csv","w") as out:
+        out.write("\n".join(csvData))
 
     return results
 
@@ -62,7 +75,25 @@ def graphIt(db):
         vals.append(x[1])
         vals.append(y[1])
 
-    plt.bar(names,vals)
+
+    N = len(db)
+    fig, ax = plt.subplots()
+
+    ind = np.arange(N)    # the x locations for the groups
+    width = 0.35         # the width of the bars
+    p1 = ax.bar(ind, vals[::2], width)
+
+    p2 = ax.bar(ind + width, vals[1::2], width)
+
+    ax.set_title('Vote Results')
+    ax.set_xticks(ind + width / 2)
+    labelList = []
+    for i in range(0,len(names),2):
+        labelList.append(f"{names[i]}/{names[i+1]}")
+    ax.set_xticklabels(labelList)
+
+    ax.autoscale_view()
+
     plt.show()
 
 def printIt(db):
