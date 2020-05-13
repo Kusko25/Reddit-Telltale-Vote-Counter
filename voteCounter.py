@@ -3,9 +3,10 @@ import os
 import matplotlib.pyplot as plt
 import configparser
 import numpy as np
+import matplotlib.ticker as mtick
 
-CANDIDATES=[["Fiona","Carley"],["Rhys","Louis"]]
-URL="https://www.reddit.com/r/telltale/comments/ggqwob/telltales_most_popular_character_fiona_vs_carley/"
+CANDIDATES=[[["Fiona"],["Clementine","Clem"]],[["Rhys"],["Bigby"]],[["Kenny"],["Lee"]],[["Jack"],["Mary"]]]
+URL="https://www.reddit.com/r/telltale/comments/giklmo/telltales_most_popular_character_the/"
 OPEN_PERIOD=60*60*24*2
 MIN_ACC_AGE=60*60*24*3
 
@@ -29,7 +30,7 @@ def processReddit(choices):
     # [[[choice[0],val],...]
     results = []
     for choice in choices:
-        results.append([[x,0] for x in choice])
+        results.append([[x[0],0] for x in choice])
 
     comments.sort(key=lambda x: x.created_utc,reverse=True)
 
@@ -40,21 +41,22 @@ def processReddit(choices):
         if  comment.author in voters or\
             comment.created_utc - comment.author.created_utc<MIN_ACC_AGE or\
             comment.created_utc> thread.created_utc +  OPEN_PERIOD:
+            print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
             continue
 
         voteString = [str(comment.author)] + [""]*len(choices)
         voted = False
         for i,choice in enumerate(choices):
-            a = choice[0].lower() in comment.body.lower()
-            b = choice[1].lower() in comment.body.lower()
+            a = any([x.lower() in comment.body.lower() for x in choice[0]])
+            b = any([x.lower() in comment.body.lower() for x in choice[1]])
             if a or b:
                 if a and b:
                     continue
                 if a:
-                    voteString[i+1]=choice[0]
+                    voteString[i+1]=choice[0][0]
                     results[i][0][1]+=1
                 if b:
-                    voteString[i+1]=choice[1]
+                    voteString[i+1]=choice[1][0]
                     results[i][1][1]+=1
                 voted=True
                 voters.add(comment.author)
@@ -75,6 +77,11 @@ def graphIt(db):
         vals.append(x[1])
         vals.append(y[1])
 
+    for i in range(0,len(vals),2):
+        p1 = vals[i]/(vals[i]+vals[i+1])
+        p2 = vals[i+1]/(vals[i]+vals[i+1])
+        vals[i] = p1
+        vals[i+1] = p2
 
     N = len(db)
     fig, ax = plt.subplots()
@@ -91,6 +98,7 @@ def graphIt(db):
     for i in range(0,len(names),2):
         labelList.append(f"{names[i]}/{names[i+1]}")
     ax.set_xticklabels(labelList)
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
 
     ax.autoscale_view()
 
@@ -105,8 +113,21 @@ def printIt(db):
         vals.append(x[1])
         vals.append(y[1])
 
-    for i,name in enumerate(names):
-        print(f"{name}: {vals[i]}")
+    out = open("results.txt","w")
+    for i in range(0,len(names),2):
+        percentStr = "{:.2%}".format(vals[i]/(vals[i]+vals[i+1]))
+        print(f"{names[i]}: {vals[i]} ({percentStr})")
+        percentStr = "{:.2%}".format(vals[i+1]/(vals[i]+vals[i+1]))
+        print(f"{names[i+1]}: {vals[i+1]} ({percentStr})")
+        print("")
+
+
+        percentStr = "{:.2%}".format(vals[i]/(vals[i]+vals[i+1]))
+        print(f"{names[i]}: {vals[i]} ({percentStr})",file=out)
+        percentStr = "{:.2%}".format(vals[i+1]/(vals[i]+vals[i+1]))
+        print(f"{names[i+1]}: {vals[i+1]} ({percentStr})",file=out)
+        print("")
+    out.close()
 
 
 
