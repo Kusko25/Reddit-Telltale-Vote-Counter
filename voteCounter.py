@@ -37,19 +37,26 @@ def processReddit(choices):
     csvData=[]
 
     for comment in comments:
-
-        if  comment.author in voters or\
-            thread.created_utc + OPEN_PERIOD - comment.author.created_utc<MIN_ACC_AGE or\
-            comment.created_utc> thread.created_utc + OPEN_PERIOD:
+        if comment.author in voters:
             print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
-            if comment.author in voters:
-                print(f"Reason: Already voted")
-            elif thread.created_utc + OPEN_PERIOD - comment.author.created_utc<MIN_ACC_AGE:
-                print(f"Reason: Account not old enough")
-            elif comment.created_utc> thread.created_utc +  OPEN_PERIOD:
-                print(f"Reason: Vote window closed")
+            print(f"Reason: Already voted")
             print("")
             continue
+        if thread.created_utc + OPEN_PERIOD - comment.author.created_utc<MIN_ACC_AGE:
+            print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
+            print(f"Reason: Account not old enough")
+            print("")
+            continue
+        if comment.created_utc> thread.created_utc +  OPEN_PERIOD:
+            print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
+            print(f"Reason: Vote window closed")
+            print("")
+            continue
+        # if len(list(comment.author.comments.new(limit=2))) == 1:
+        #     print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
+        #     print(f"Reason: Only has one comment")
+        #     print("")
+        #     continue
 
         voteString = [str(comment.author)] + [""]*len(choices)
         voted = False
@@ -133,7 +140,7 @@ def printIt(db):
         print(f"{names[i]}: {vals[i]} ({percentStr})",file=out)
         percentStr = "{:.2%}".format(vals[i+1]/(vals[i]+vals[i+1]))
         print(f"{names[i+1]}: {vals[i+1]} ({percentStr})",file=out)
-        print("")
+        print("",file=out)
     out.close()
 
 
