@@ -39,9 +39,16 @@ def processReddit(choices):
     for comment in comments:
 
         if  comment.author in voters or\
-            comment.created_utc - comment.author.created_utc<MIN_ACC_AGE or\
-            comment.created_utc> thread.created_utc +  OPEN_PERIOD:
+            thread.created_utc + OPEN_PERIOD - comment.author.created_utc<MIN_ACC_AGE or\
+            comment.created_utc> thread.created_utc + OPEN_PERIOD:
             print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
+            if comment.author in voters:
+                print(f"Reason: Already voted")
+            elif thread.created_utc + OPEN_PERIOD - comment.author.created_utc<MIN_ACC_AGE:
+                print(f"Reason: Account not old enough")
+            elif comment.created_utc> thread.created_utc +  OPEN_PERIOD:
+                print(f"Reason: Vote window closed")
+            print("")
             continue
 
         voteString = [str(comment.author)] + [""]*len(choices)
@@ -64,7 +71,7 @@ def processReddit(choices):
             csvData.append(";".join(voteString))
 
     with open("data.csv","w") as out:
-        out.write("\n".join(csvData))
+        out.write("\n".join(sorted(csvData,key=lambda x:x.lower())))
 
     return results
 
