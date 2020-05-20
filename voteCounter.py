@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import configparser
 import numpy as np
 import matplotlib.ticker as mtick
+import logging
 
-CANDIDATES=[[["Fiona"],["Clementine","Clem"]],[["Rhys"],["Bigby"]],[["Kenny"],["Lee"]],[["Jack"],["Mary"]]]
-URL="https://www.reddit.com/r/telltale/comments/giklmo/telltales_most_popular_character_the/"
+CANDIDATES=[[["Clementine","Clem"],["Lee"]]]
+URL="https://www.reddit.com/r/telltale/comments/gmy3qz/telltales_most_popular_character_the_final_match/"
 OPEN_PERIOD=60*60*24*2
-MIN_ACC_AGE=60*60*24*3
+MIN_ACC_AGE=60*60*24*10
 
 def init():
     if os.path.exists("config.ini"):
@@ -32,12 +33,14 @@ def processReddit(choices):
     for choice in choices:
         results.append([[x[0],0] for x in choice])
 
-    comments.sort(key=lambda x: x.created_utc,reverse=True)
+    comments.sort(key=lambda x: x.created_utc,reverse=False)
 
     csvData=[]
 
     for comment in comments:
         if comment.author in voters:
+            if not any([x.lower() in comment.body.lower() for x in (choice[0] + choice[1])]):
+                continue
             print(f"Shame on {comment.author.name}\nComment: '{comment.body}'")
             print(f"Reason: Already voted")
             print("")
@@ -75,10 +78,10 @@ def processReddit(choices):
                 voted=True
                 voters.add(comment.author)
         if voted:
-            csvData.append(";".join(voteString))
+            csvData.append(";".join(voteString+[comment.body.replace("\n"," ")]))
 
-    with open("data.csv","w") as out:
-        out.write("\n".join(sorted(csvData,key=lambda x:x.lower())))
+    with open("data.csv","wb") as out:
+        out.write("\n".join(["User;"+";".join([f"Choice {i+1}" for i in range(len(choices))])+";Comment"] + sorted(csvData,key=lambda x:x.lower())).encode("utf8"))
 
     return results
 
